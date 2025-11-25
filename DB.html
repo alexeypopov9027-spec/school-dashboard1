@@ -722,9 +722,6 @@
 
 <script>
   // ===== ГЛОБАЛЬНЫЕ ДАННЫЕ =====
-  const EXCEL_URL = "results_1trim_9grade.xlsx";
-  const GEOJSON_URL = "mo_municipalities.geojson.geojson";
-
   let allRecords = [];   // исходные строки журнала
   let allStudents = [];  // агрегировано по ученикам
   let schoolStatsAll = [];
@@ -1718,59 +1715,65 @@
     });
   });
 
-    // ===== АВТОЗАГРУЗКА ФАЙЛОВ С СЕРВЕРА =====
-  async function loadExcelFromServer() {
-    const status = document.getElementById("file-status");
-    try {
-      if (status) status.textContent = "Загружаю Excel с сервера...";
-      const resp = await fetch(EXCEL_URL);
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-
-      const buf = await resp.arrayBuffer();
-      const data = new Uint8Array(buf);
-      const workbook = XLSX.read(data, { type: "array" });
-
-      // твоя существующая функция разбора книги
-      parseWorkbook(workbook, EXCEL_URL);
-
-      if (status) status.textContent = "Excel загружен автоматически.";
-    } catch (e) {
-      console.error(e);
-      if (status) {
-        status.textContent = "Не удалось автоматически загрузить Excel. Можно выбрать файл вручную.";
-      }
-    }
-  }
-
-  async function loadGeoJsonFromServer() {
-    const status = document.getElementById("geojson-status");
-    try {
-      if (status) status.textContent = "Загружаю GeoJSON с сервера...";
-      const resp = await fetch(GEOJSON_URL);
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-
-      const json = await resp.json();
-      geoJsonData = json;
-
-      if (status) status.textContent = "GeoJSON загружен автоматически.";
-
-      // твои функции для карты
-      initGeoMap();
-      initGeoPropertySelector();
-      renderGeoLayer();
-    } catch (e) {
-      console.error(e);
-      if (status) {
-        status.textContent = "Не удалось автоматически загрузить GeoJSON. Можно выбрать файл вручную.";
-      }
-    }
-  }
-
   window.addEventListener("load", () => {
-    // при загрузке страницы сразу грузим файлы
-    loadExcelFromServer();
-    loadGeoJsonFromServer();
+    // ждём загрузки файлов
   });
+
+// ===== AUTLOADING FILES ADDED BY CHATGPT =====
+const EXCEL_URL = "results_1trim_9grade.xlsx";
+const GEOJSON_URL = "mo_municipalities.geojson.geojson";
+
+async function loadExcelFromServer() {
+  const status = document.getElementById("file-status");
+  try {
+    if (status) status.textContent = "Загружаю Excel с сервера...";
+    const resp = await fetch(EXCEL_URL);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const buf = await resp.arrayBuffer();
+    const data = new Uint8Array(buf);
+    const workbook = XLSX.read(data, { type: "array" });
+    if (typeof parseWorkbook === "function") {
+      parseWorkbook(workbook, EXCEL_URL);
+    }
+    if (status) status.textContent = "Excel загружен автоматически.";
+  } catch (e) {
+    console.error(e);
+    if (status) status.textContent = "Не удалось автоматически загрузить Excel. Можно выбрать файл вручную.";
+  }
+}
+
+async function loadGeoJsonFromServer() {
+  const status = document.getElementById("geojson-status");
+  try {
+    if (status) status.textContent = "Загружаю GeoJSON с сервера...";
+    const resp = await fetch(GEOJSON_URL);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const json = await resp.json();
+    if (typeof geoJsonData !== "undefined") {
+      geoJsonData = json;
+    } else {
+      window.geoJsonData = json;
+    }
+    if (typeof initGeoMap === "function") initGeoMap();
+    if (typeof initGeoPropertySelector === "function") initGeoPropertySelector();
+    if (typeof renderGeoLayer === "function") renderGeoLayer();
+    if (status) status.textContent = "GeoJSON загружен автоматически.";
+  } catch (e) {
+    console.error(e);
+    if (status) status.textContent = "Не удалось автоматически загрузить GeoJSON. Можно выбрать файл вручную.";
+  }
+}
+
+window.addEventListener("load", () => {
+  try {
+    loadExcelFromServer();
+  } catch (e) { console.error(e); }
+  try {
+    loadGeoJsonFromServer();
+  } catch (e) { console.error(e); }
+});
+// ===== END AUTLOADING FILES ADDED BY CHATGPT =====
+
 </script>
 </body>
 </html>
